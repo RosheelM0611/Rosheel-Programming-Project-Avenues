@@ -1,0 +1,102 @@
+package org.firstinspires.ftc.teamcode.auton;
+import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantAction;
+import com.acmerobotics.roadrunner.ParallelAction;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+
+import org.firstinspires.ftc.teamcode.MecanumDrive;
+
+
+@Config
+@Autonomous(name = "Auton_Code_Challenge")
+public class Auton_Code_Challenge extends LinearOpMode {
+
+    CRServo flag;
+    NormalizedColorSensor colorSensor;
+
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+
+        flag = hardwareMap.get(CRServo.class, "flag");
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "sensor_color");
+        Pose2d beginPose = new Pose2d(24, 0, Math.toRadians(180));
+        MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
+
+        Action raiseFlag = new InstantAction (() -> {
+            flag.setPower(1);
+
+        });
+        Action stopFlag = new InstantAction (() -> {
+            flag.setPower(0);
+        });
+
+
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+        boolean isRed = colors.red > colors.blue;
+
+        waitForStart();
+
+        Action selectedPath;
+        Action fullSequence;
+
+        if (isRed) {
+            //clockwise
+            selectedPath = drive.actionBuilder(new Pose2d(24,0,Math.toRadians(180)))
+            .splineToLinearHeading(new Pose2d(15,15,Math.toRadians(180)),Math.toRadians(180))
+                    .lineToX(-15)
+                    .turn(Math.toRadians(90))
+                    .lineToY(-15)
+                    .turn(Math.toRadians(90))
+                    .lineToX(15)
+                    .turn(Math.toRadians(90))
+                    .lineToY(15)
+                    .build();
+
+            fullSequence = new SequentialAction(
+                selectedPath
+
+            );
+
+        } else {
+            //counterclockwise
+                    selectedPath =  drive.actionBuilder(new Pose2d(24,0,Math.toRadians(180)))
+                    .splineToLinearHeading(new Pose2d(15,-15,Math.toRadians(180)),Math.toRadians(180))
+                    .lineToX(-15)
+                    .turn(Math.toRadians(90))
+                    .lineToY(15)
+                    .turn(Math.toRadians(90))
+                    .lineToX(15)
+                    .turn(Math.toRadians(90))
+                    .lineToY(-15)
+                    .build();
+
+            fullSequence = new SequentialAction(
+                    selectedPath,
+                    raiseFlag,
+                    new SleepAction(3),
+                    stopFlag
+
+            );
+
+        }
+
+        Actions.runBlocking(fullSequence);
+
+            new SequentialAction(
+                    selectedPath
+        );
+    }
+}
