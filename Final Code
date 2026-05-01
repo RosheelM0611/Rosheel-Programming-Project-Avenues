@@ -41,16 +41,25 @@ public class Auton_Code_Challenge extends LinearOpMode {
         Action stopFlag = new InstantAction (() -> {
             flag.setPower(0);
         });
+        
 
+        boolean isRed = true;
 
-        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+        while (!isStarted() && !isStopRequested()) {
+            NormalizedRGBA colors = colorSensor.getNormalizedColors();
+            isRed = colors.red > colors.blue;
 
-        boolean isRed = colors.red > colors.blue;
-
+            telemetry.addData("Red", colors.red);
+            telemetry.addData("Blue", colors.blue);
+            telemetry.addData("Detected", isRed ? "RED" : "BLUE");
+            telemetry.update();
+        }
         waitForStart();
+
 
         Action selectedPath;
         Action fullSequence;
+        Action parkPath;
 
         if (isRed) {
             //clockwise
@@ -65,9 +74,15 @@ public class Auton_Code_Challenge extends LinearOpMode {
                     .lineToY(15)
                     .build();
 
-            fullSequence = new SequentialAction(
-                selectedPath
+            parkPath =  drive.actionBuilder(new Pose2d(15,15,Math.toRadians(90)))
+                .splineToLinearHeading(new Pose2d(-24, 0, Math.toRadians(180)),Math.PI/2)
+                .build();
 
+
+
+            fullSequence = new SequentialAction(
+                    selectedPath,
+                    parkPath
             );
 
         } else {
@@ -83,20 +98,25 @@ public class Auton_Code_Challenge extends LinearOpMode {
                     .lineToY(-15)
                     .build();
 
+            parkPath =  drive.actionBuilder(new Pose2d(15,-15,Math.toRadians(270)))
+                    .splineToLinearHeading(new Pose2d(-24, 0, Math.toRadians(180)),Math.PI/2)
+                    .build();
+
+
             fullSequence = new SequentialAction(
                     selectedPath,
+                    //selectedPath =  drive.actionBuilder(new Pose2d(15,-15,Math.toRadians(270)))
+                    parkPath,
                     raiseFlag,
                     new SleepAction(3),
                     stopFlag
 
             );
 
+
         }
 
         Actions.runBlocking(fullSequence);
 
-            new SequentialAction(
-                    selectedPath
-        );
     }
 }
